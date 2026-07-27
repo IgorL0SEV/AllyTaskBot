@@ -120,7 +120,9 @@ class Database:
         # BOM нужен, чтобы Excel/LibreOffice правильно открыли кириллицу.
         wrapper = io.TextIOWrapper(buffer, encoding="utf-8-sig", newline="")
 
-        writer = csv.writer(wrapper, quoting=csv.QUOTE_MINIMAL)
+        # Разделитель ";" — чтобы Excel/LibreOffice в русской локали
+        # корректно разбивали по колонкам (запятая там — десятичный разделитель).
+        writer = csv.writer(wrapper, delimiter=";", quoting=csv.QUOTE_MINIMAL)
         # Заголовок таблицы
         writer.writerow(["id", "text", "user", "created_at", "status", "category"])
 
