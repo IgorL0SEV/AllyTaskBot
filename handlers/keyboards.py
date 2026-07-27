@@ -5,53 +5,81 @@ Inline-клавиатуры — это кнопки, прикреплённые 
 При нажатии Telegram присылает боту callback с данными кнопки
 (мы их кладём в callback_data), а бот реагирует в обработчике.
 
-Справочники значений хранятся здесь же, чтобы и кнопки, и обработчики
-использовали один источник истины.
+================================================================
+  КАК ИЗМЕНИТЬ КНОПКИ (меню категорий и статусов)
+================================================================
+Вся настройка — в двух словарях ниже: CATEGORIES и STATUSES.
+
+    "ключ":  "Текст на кнопке"
+     ↑           ↑
+  внутренний   видит пользователь
+   ключ        в Telegram
+  (латиницей,
+   не меняйте
+   у старых
+   кнопок)
+
+ДОБАВИТЬ кнопку — впишите новую строку по аналогии:
+    "design": "Дизайн",
+
+УДАЛИТЬ кнопку — сотрите строку.
+ПЕРЕИМЕНОВАТЬ подпись — поменяйте текст справа (ключ оставьте).
+
+Порядок строк = порядок кнопок в Telegram.
+В БД сохраняется текст справа (например, «Фронт-энд»), поэтому
+у старых задач подпись останется прежней — это нормально.
+================================================================
 """
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-# Справочник категорий: callback_data -> отображаемый текст
+# ------------------------------------------------------------------
+# МЕНЮ: КАТЕГОРИИ
+# ------------------------------------------------------------------
 CATEGORIES = {
-    "front": "Фронт-энд",
-    "back": "Бэк-энд",
-    "db": "База данных",
+    "front":  "Фронт-энд",
+    "back":   "Бэк-энд",
+    "db":     "База данных",
     "common": "Общее",
 }
 
-# Справочник статусов
+# ------------------------------------------------------------------
+# МЕНЮ: СТАТУСЫ
+# ------------------------------------------------------------------
 STATUSES = {
-    "new": "Новое",
+    "new":         "Новое",
     "in_progress": "В работе",
-    "done": "Выполнено",
+    "done":        "Выполнено",
 }
 
 
+# ------------------------------------------------------------------
+# Сборка клавиатур (дальше можно не читать — код строит кнопки сам)
+# ------------------------------------------------------------------
 def categories_keyboard() -> InlineKeyboardMarkup:
-    """Клавиатура выбора категории при добавлении задачи."""
+    """Собирает inline-клавиатуру из словаря CATEGORIES."""
     builder = InlineKeyboardBuilder()
-    for callback_data, label in CATEGORIES.items():
-        # callback_data = "category:<value>" — обработчик в add.py парсит это
-        builder.button(text=label, callback_data=f"category:{callback_data}")
-    # По 2 кнопки в ряд — компактно смотрится в Telegram
-    builder.adjust(2)
+    for key, label in CATEGORIES.items():
+        # callback_data = "category:<key>" — обработчик в add.py парсит это
+        builder.button(text=label, callback_data=f"category:{key}")
+    builder.adjust(2)  # по 2 кнопки в ряд
     return builder.as_markup()
 
 
 def statuses_keyboard() -> InlineKeyboardMarkup:
-    """Клавиатура выбора статуса при добавлении задачи."""
+    """Собирает inline-клавиатуру из словаря STATUSES."""
     builder = InlineKeyboardBuilder()
-    for callback_data, label in STATUSES.items():
-        builder.button(text=label, callback_data=f"status:{callback_data}")
+    for key, label in STATUSES.items():
+        builder.button(text=label, callback_data=f"status:{key}")
     builder.adjust(2)
     return builder.as_markup()
 
 
-def get_category_label(callback_data: str) -> str:
-    """Возвращает человекочитаемое название категории по ключу."""
-    return CATEGORIES.get(callback_data, callback_data)
+def get_category_label(key: str) -> str:
+    """Возвращает подпись категории по внутреннему ключу."""
+    return CATEGORIES.get(key, key)
 
 
-def get_status_label(callback_data: str) -> str:
-    """Возвращает человекочитаемое название статуса по ключу."""
-    return STATUSES.get(callback_data, callback_data)
+def get_status_label(key: str) -> str:
+    """Возвращает подпись статуса по внутреннему ключу."""
+    return STATUSES.get(key, key)
