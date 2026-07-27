@@ -11,13 +11,13 @@ import csv
 import io
 import os
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import List, Tuple
-from zoneinfo import ZoneInfo
 
-# Часовой пояс Минска (UTC+3, без перехода на летнее время).
-# created_at хранится в этом поясе, чтобы /list и CSV показывали локальное время.
-MINSK_TZ = ZoneInfo("Europe/Minsk")
+# Часовой пояс Минска: UTC+3, без перехода на летнее время.
+# Используем фиксированный offset вместо zoneinfo — это не требует
+# пакета tzdata, которого по умолчанию нет на Windows.
+MINSK_TZ = timezone(timedelta(hours=3))
 
 
 class Database:
