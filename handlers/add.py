@@ -91,6 +91,9 @@ async def process_category(callback: CallbackQuery, state: FSMContext) -> None:
     # callback.data имеет вид "category:front" — отрезаем префикс.
     category_key = callback.data.split(":", 1)[1]
     await state.update_data(category=category_key)
+    # Переключаемся в состояние ожидания статуса — без этого клик по
+    # кнопке статуса ниже не будет перехвачен этим роутером.
+    await state.set_state(AddTask.waiting_for_status)
 
     await callback.message.edit_text(  # меняем предыдущее сообщение
         f"📁 Категория: <b>{get_category_label(category_key)}</b>\n\n"
