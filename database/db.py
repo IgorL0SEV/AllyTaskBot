@@ -13,6 +13,11 @@ import os
 import sqlite3
 from datetime import datetime
 from typing import List, Tuple
+from zoneinfo import ZoneInfo
+
+# Часовой пояс Минска (UTC+3, без перехода на летнее время).
+# created_at хранится в этом поясе, чтобы /list и CSV показывали локальное время.
+MINSK_TZ = ZoneInfo("Europe/Minsk")
 
 
 class Database:
@@ -49,7 +54,7 @@ class Database:
           id         — уникальный номер задачи (autoincrement);
           text       — текст задачи/идеи;
           user       — имя пользователя, оставившего задачу;
-          created_at — дата и время создания;
+          created_at — дата и время создания (часовой пояс Минска, UTC+3);
           status     — статус задачи («новое», «в работе», «выполнено»);
           category   — категория («фронт-энд», «бэк-энд», «база данных», «общее»).
         """
@@ -71,13 +76,18 @@ class Database:
     # CRUD-методы
     # ------------------------------------------------------------------
     def add_task(self, text: str, user: str, status: str, category: str) -> int:
-        """Добавляет новую задачу и возвращает её id."""
+        """Добавляет новую задачу и возвращает её id.
+
+        created_at вычисляется в Python по часовому поясу Минска (UTC+3),
+        а не через CURRENT_TIMESTAMP SQLite (которая отдаёт UTC).
+        """
+        created_at = datetime.now(MINSK_TZ).strftime("%Y-%m-%d %H:%M:%S")
         cursor = self.connection.execute(
             """
-            INSERT INTO tasks (text, user, status, category)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO tasks (text, user, created_at, status, category)
+            VALUES (?, ?, ?, ?, ?)
             """,
-            (text, user, status, category),
+            (text, user, created_at, status, category),
         )
         self.connection.commit()
         return cursor.lastrowid  # id новой строки
