@@ -1,0 +1,5 @@
+# Telegram-бот фреймворк (async, FSM, Router, inline-клавиатуры)
+aiogram>=3.4
+
+# Загрузка переменных окружения из файла .env
+python-dotenv>=1.0
