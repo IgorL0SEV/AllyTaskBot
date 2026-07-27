@@ -16,6 +16,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from config import config
 from database.db import Database
 from handlers import register_handlers
+from handlers.start import bot_commands
 
 
 async def main() -> None:
@@ -45,6 +46,10 @@ async def main() -> None:
 
     # Подключаем все роутеры из пакета handlers.
     register_handlers(dp)
+
+    # Регистрируем команды в Telegram-меню (кнопка Menu слева от ввода).
+    # Список берётся из handlers/start.py → COMMANDS.
+    await bot.set_my_commands(bot_commands())
 
     log.info("Бот запущен. Polling started...")
     try:
