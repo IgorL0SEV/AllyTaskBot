@@ -55,8 +55,12 @@ class Database:
           text       — текст задачи/идеи;
           user       — имя пользователя, оставившего задачу;
           created_at — дата и время создания (часовой пояс Минска, UTC+3);
-          status     — статус задачи («новое», «в работе», «выполнено»);
-          category   — категория («фронт-энд», «бэк-энд», «база данных», «общее»).
+          status     — статус задачи («Новое», «В работе», «Выполнено»);
+          category   — категория («Фронт-энд», «Бэк-энд», «База данных», «Общее»).
+
+        DEFAULT задан заглавными подписями — теми же, что бот пишет из
+        menus.py (Меню 1 / Меню 2). Так любой путь (бот или прямой SQL-вставка
+        без явных значений) даёт одинаковый регистр — единообразно.
         """
         self.connection.execute(
             """
@@ -65,8 +69,8 @@ class Database:
                 text       TEXT NOT NULL,
                 user       TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                status     TEXT DEFAULT 'новое',
-                category   TEXT DEFAULT 'общее'
+                status     TEXT DEFAULT 'Новое',
+                category   TEXT DEFAULT 'Общее'
             )
             """
         )
