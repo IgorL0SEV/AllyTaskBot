@@ -6,12 +6,15 @@ FSM (Finite State Machine) — машина состояний. Сценарий
 На каждом шаге бот «помнит», что уже ввёл пользователь, через FSMContext.
 
 Поток:
-  1. /add          -> состояние waiting_for_text, спрашиваем текст.
-  2. текст         -> сохраняем в state, показываем клавиатуру категорий,
-                     переход в waiting_for_category.
-  3. категория     -> сохраняем, показываем клавиатуру статусов,
-                     переход в waiting_for_status.
-  4. статус        -> достаём всё из state, пишем в БД, выходим из FSM.
+  1. /add          -> состояние waiting_for_text, спрашиваем текст (Меню 5).
+  2. текст         -> сохраняем в state, показываем клавиатуру категорий
+                     (Меню 1), переход в waiting_for_category (Меню 6).
+  3. категория     -> сохраняем, показываем клавиатуру статусов (Меню 2),
+                     переход в waiting_for_status (Меню 7).
+  4. статус        -> достаём всё из state, пишем в БД, выходим из FSM
+                     (Меню 8 — успех, Меню 9 — ошибка устаревания).
+
+Все тексты сообщений живут в menus.py. Здесь только логика сценария.
 """
 from aiogram import F, Router
 from aiogram.filters import Command
@@ -25,6 +28,13 @@ from handlers.keyboards import (
     statuses_keyboard,
     get_category_label,
     get_status_label,
+)
+from menus import (
+    MENU_5_ADD_PROMPT,
+    MENU_6_CATEGORY_PROMPT,
+    MENU_7_STATUS_PROMPT,
+    MENU_8_SUCCESS,
+    MENU_9_ERROR,
 )
 
 router = Router(name="add")
@@ -60,10 +70,7 @@ async def cmd_add(message: Message, state: FSMContext) -> None:
     # На старте сбрасываем любые прежние состояния, чтобы не запутаться.
     await state.clear()
     await state.set_state(AddTask.waiting_for_text)
-    await message.answer(
-        "✍️ <b>Добавление задачи</b>\n\n"
-        "Введите текст задачи (идею) одним сообщением:"
-    )
+    await message.answer(MENU_5_ADD_PROMPT)
 
 
 # ---------------------------------------------------------------------
@@ -77,7 +84,7 @@ async def process_text(message: Message, state: FSMContext) -> None:
     await state.update_data(text=message.text, user=_display_user(message))
     await state.set_state(AddTask.waiting_for_category)
     await message.answer(
-        "📁 Выберите категорию задачи:",
+        MENU_6_CATEGORY_PROMPT,
         reply_markup=categories_keyboard(),
     )
 
@@ -88,7 +95,7 @@ async def process_text(message: Message, state: FSMContext) -> None:
 @router.callback_query(AddTask.waiting_for_category, F.data.startswith("category:"))
 async def process_category(callback: CallbackQuery, state: FSMContext) -> None:
     """Сохраняет выбранную категорию и показывает кнопки выбора статуса."""
-    # callback.data имеет вид "category:front" — отрезаем префикс.
+    # callback.data имеет вид "category:project1" — отрезаем префикс.
     category_key = callback.data.split(":", 1)[1]
     await state.update_data(category=category_key)
     # Переключаемся в состояние ожидания статуса — без этого клик по
@@ -96,8 +103,7 @@ async def process_category(callback: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(AddTask.waiting_for_status)
 
     await callback.message.edit_text(  # меняем предыдущее сообщение
-        f"📁 Категория: <b>{get_category_label(category_key)}</b>\n\n"
-        f"🚦 Выберите статус задачи:",
+        MENU_7_STATUS_PROMPT.format(category=get_category_label(category_key)),
         reply_markup=statuses_keyboard(),
     )
     # Подтверждаем callback, чтобы у кнопки не осталось «часиков».
@@ -121,29 +127,30 @@ async def process_status(callback: CallbackQuery, state: FSMContext, db: Databas
     # устарел) — просим начать заново.
     if not data.get("text"):
         await state.clear()
-        await callback.message.edit_text(
-            "⚠️ Что-то пошло не так — данные устарели. Попробуйте /add заново."
-        )
+        await callback.message.edit_text(MENU_9_ERROR)
         await callback.answer()
         return
 
     # Пишем в базу. В БД храним человекочитаемые подписи, чтобы
     # /list и CSV читались без дополнительных преобразований.
+    category_label = get_category_label(data["category"])
+    status_label = get_status_label(status_key)
     task_id = db.add_task(
         text=data["text"],
         user=data["user"],
-        status=get_status_label(status_key),
-        category=get_category_label(data["category"]),
+        status=status_label,
+        category=category_label,
     )
 
     # Выходим из FSM — сценарий завершён.
     await state.clear()
     await callback.message.edit_text(
-        f"✅ <b>Задача #{task_id} добавлена!</b>\n\n"
-        f"📝 {data['text']}\n\n"
-        f"👤 {data['user']}\n"
-        f"📁 {get_category_label(data['category'])}\n"
-        f"🚦 {get_status_label(status_key)}\n\n"
-        f"Посмотреть все задачи: /list"
+        MENU_8_SUCCESS.format(
+            task_id=task_id,
+            text=data["text"],
+            user=data["user"],
+            category=category_label,
+            status=status_label,
+        )
     )
     await callback.answer()

@@ -1,65 +1,24 @@
 """
-handlers/keyboards.py — inline-клавиатуры для бота.
+handlers/keyboards.py — сборка inline-клавиатур бота.
 
-Inline-клавиатуры — это кнопки, прикреплённые к сообщению.
-При нажатии Telegram присылает боту callback с данными кнопки
-(мы их кладём в callback_data), а бот реагирует в обработчике.
+Inline-клавиатура — это кнопки, прикреплённые к сообщению. При нажатии
+Telegram присылает боту callback с данными кнопки (мы кладём их в
+callback_data), а бот реагирует в обработчике.
 
-================================================================
-  КАК ИЗМЕНИТЬ КНОПКИ (меню категорий и статусов)
-================================================================
-Вся настройка — в двух словарях ниже: CATEGORIES и STATUSES.
-
-    "ключ":  "Текст на кнопке"
-     ↑           ↑
-  внутренний   видит пользователь
-   ключ        в Telegram
-  (латиницей,
-   не меняйте
-   у старых
-   кнопок)
-
-ДОБАВИТЬ кнопку — впишите новую строку по аналогии:
-    "design": "Дизайн",
-
-УДАЛИТЬ кнопку — сотрите строку.
-ПЕРЕИМЕНОВАТЬ подпись — поменяйте текст справа (ключ оставьте).
-
-Порядок строк = порядок кнопок в Telegram.
-В БД сохраняется текст справа (например, «Фронт-энд»), поэтому
-у старых задач подпись останется прежней — это нормально.
-================================================================
+Тексты кнопок (категории, статусы) живут в menus.py (Меню 1 и Меню 2).
+Здесь только логика сборки клавиатур и lookup подписей по ключу.
+Чтобы добавить/переименовать/удалить кнопку — правьте menus.py.
 """
 from aiogram.types import InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-# ------------------------------------------------------------------
-# МЕНЮ: КАТЕГОРИИ
-# ------------------------------------------------------------------
-CATEGORIES = {
-    "front":  "Фронт-энд",
-    "back":   "Бэк-энд",
-    "db":     "База данных",
-    "common": "Общее",
-}
-
-# ------------------------------------------------------------------
-# МЕНЮ: СТАТУСЫ
-# ------------------------------------------------------------------
-STATUSES = {
-    "new":         "Новое",
-    "in_progress": "В работе",
-    "done":        "Выполнено",
-}
+from menus import MENU_1_CATEGORIES, MENU_2_STATUSES
 
 
-# ------------------------------------------------------------------
-# Сборка клавиатур (дальше можно не читать — код строит кнопки сам)
-# ------------------------------------------------------------------
 def categories_keyboard() -> InlineKeyboardMarkup:
-    """Собирает inline-клавиатуру из словаря CATEGORIES."""
+    """Собирает inline-клавиатуру категорий из menus.MENU_1_CATEGORIES."""
     builder = InlineKeyboardBuilder()
-    for key, label in CATEGORIES.items():
+    for key, label in MENU_1_CATEGORIES.items():
         # callback_data = "category:<key>" — обработчик в add.py парсит это
         builder.button(text=label, callback_data=f"category:{key}")
     builder.adjust(2)  # по 2 кнопки в ряд
@@ -67,19 +26,19 @@ def categories_keyboard() -> InlineKeyboardMarkup:
 
 
 def statuses_keyboard() -> InlineKeyboardMarkup:
-    """Собирает inline-клавиатуру из словаря STATUSES."""
+    """Собирает inline-клавиатуру статусов из menus.MENU_2_STATUSES."""
     builder = InlineKeyboardBuilder()
-    for key, label in STATUSES.items():
+    for key, label in MENU_2_STATUSES.items():
         builder.button(text=label, callback_data=f"status:{key}")
     builder.adjust(2)
     return builder.as_markup()
 
 
 def get_category_label(key: str) -> str:
-    """Возвращает подпись категории по внутреннему ключу."""
-    return CATEGORIES.get(key, key)
+    """Возвращает подпись категории по внутреннему ключу (из Меню 1)."""
+    return MENU_1_CATEGORIES.get(key, key)
 
 
 def get_status_label(key: str) -> str:
-    """Возвращает подпись статуса по внутреннему ключу."""
-    return STATUSES.get(key, key)
+    """Возвращает подпись статуса по внутреннему ключу (из Меню 2)."""
+    return MENU_2_STATUSES.get(key, key)

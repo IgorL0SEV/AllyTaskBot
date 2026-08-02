@@ -3,6 +3,7 @@ handlers/list_csv.py — команда /list_csv.
 
 Генерирует CSV-файл со всеми задачами и отправляет его как документ.
 CSV удобно открывать в Excel / LibreOffice / Google Sheets.
+Подпись к документу — Меню 12 в menus.py.
 """
 from datetime import date
 
@@ -11,6 +12,7 @@ from aiogram.filters import Command
 from aiogram.types import BufferedInputFile, Message
 
 from database.db import Database
+from menus import MENU_12_CSV_CAPTION
 
 router = Router(name="list_csv")
 
@@ -29,5 +31,5 @@ async def cmd_list_csv(message: Message, db: Database) -> None:
 
     await message.answer_document(
         document=file,
-        caption=f"📄 Выгрузка задач на {date.today().isoformat()}",
+        caption=MENU_12_CSV_CAPTION.format(date=date.today().isoformat()),
     )

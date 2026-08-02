@@ -1,57 +1,32 @@
 """
-handlers/start.py — обработчик команды /start и единый список команд бота.
+handlers/start.py — обработчик команды /start.
 
-Чтобы добавить/изменить команду — отредактируйте список COMMANDS ниже.
-Текст приветствия и меню Telegram соберутся из него автоматически.
+Текст приветствия и список команд живут в menus.py (Меню 3 и Меню 4).
+Здесь только сборка приветствия из частей и регистрация команд в
+Telegram-меню. Чтобы добавить/изменить команду — правьте menus.MENU_4_COMMANDS.
 """
 from aiogram import Router
 from aiogram.filters import CommandStart
 from aiogram.types import BotCommand, Message
 
+from menus import MENU_3_INTRO, MENU_3_OUTRO, MENU_4_COMMANDS
+
 router = Router(name="start")
 
 
-# ==================================================================
-#   СПИСОК КОМАНД БОТА — меняйте здесь
-# ==================================================================
-# Формат:  ("команда",  "описание")
-#               ↑            ↑
-#         без слэша     что увидит пользователь
-#
-# Порядок строк = порядок в приветствии и в меню Telegram.
-# Добавить команду — впишите строку по аналогии.
-# Удалить — сотрите строку. (Сам обработчик команды живёт в handlers/*.py.)
-COMMANDS = [
-    ("add",      "добавить новую задачу"),
-    ("list",     "посмотреть все задачи"),
-    ("list_csv", "выгрузить все задачи в CSV-файл"),
-]
-# ==================================================================
-
-
-# Вступление и концовка приветствия. HTML-разметка разрешена
-# (ParseMode.HTML включён в main.py): <b>жирный</b>, <i>курсив</i> и т.д.
-INTRO_TEXT = (
-    "<b>👋 Привет! Я AllyTaskBot — помощник для задач команды.</b>\n\n"
-    "Я собираю идеи и задачи в одном месте, чтобы они не терялись "
-    "в переписке. Вот что я умею:\n\n"
-)
-OUTRO_TEXT = "\n\nНачни с команды <b>/add</b> 👇"
-
-
 def build_welcome_text() -> str:
-    """Собирает текст приветствия из INTRO + списка команд + OUTRO.
+    """Собирает текст приветствия: INTRO + строки команд + OUTRO.
 
-    Команды берутся из списка COMMANDS, поэтому при его изменении
-    приветствие обновится автоматически.
+    Строки команд берутся из menus.MENU_4_COMMANDS, поэтому при его
+    изменении приветствие обновится автоматически.
     """
-    lines = [f"<b>/{cmd}</b> — {desc}" for cmd, desc in COMMANDS]
-    return INTRO_TEXT + "\n".join(lines) + OUTRO_TEXT
+    lines = [f"<b>/{cmd}</b> — {desc}" for cmd, desc in MENU_4_COMMANDS]
+    return MENU_3_INTRO + "\n".join(lines) + MENU_3_OUTRO
 
 
 def bot_commands() -> list[BotCommand]:
     """Возвращает список команд для Telegram-меню (кнопка Menu возле ввода)."""
-    return [BotCommand(command=cmd, description=desc) for cmd, desc in COMMANDS]
+    return [BotCommand(command=cmd, description=desc) for cmd, desc in MENU_4_COMMANDS]
 
 
 @router.message(CommandStart())
